@@ -75,3 +75,4 @@ Notes (TR)
 - DOGRULAMA suresi 5 dakikadir (`EMAIL_VERIFY_EXPIRE_MINUTES=5`). E-posta dogrulanmadan login izinli degildir.
 - `/register` ve `/token` icin rate limit uygulanir. Degerler `.env` ile degistirilebilir: `REGISTER_RATE_LIMIT`, `TOKEN_RATE_LIMIT`.
 - Basit request logging aciktir ve `X-Request-ID` header'i eklenir (extra bagimlilik gerekmez).
+- Kullanici ID'leri UUID'dir; access token `sub` claim'i UUID string olarak gonderilir.

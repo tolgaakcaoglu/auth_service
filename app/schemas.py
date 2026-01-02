@@ -3,6 +3,7 @@ import re
 from pydantic import BaseModel, EmailStr, ConfigDict, field_validator
 from typing import Optional
 from datetime import datetime
+from uuid import UUID
 
 
 class UserCreate(BaseModel):
@@ -16,7 +17,7 @@ class UserCreate(BaseModel):
 
 
 class UserRead(BaseModel):
-    id: int
+    id: UUID
     email: EmailStr
     is_active: bool
     email_verified: bool

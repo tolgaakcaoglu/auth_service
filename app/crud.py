@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
+from uuid import UUID
 from . import models, schemas
 from .auth import hash_token, generate_token, hash_refresh_token, generate_refresh_token
 from .config import settings
@@ -8,6 +9,10 @@ from .auth import get_password_hash
 
 def get_user_by_email(db: Session, email: str):
     return db.query(models.User).filter(models.User.email == email).first()
+
+
+def get_user_by_id(db: Session, user_id: UUID):
+    return db.query(models.User).filter(models.User.id == user_id).first()
 
 
 def create_user(db: Session, user: schemas.UserCreate):
@@ -30,7 +35,7 @@ def authenticate_user(db: Session, email: str, password: str):
     return user
 
 
-def create_refresh_token(db: Session, user_id: int):
+def create_refresh_token(db: Session, user_id: UUID):
     token = generate_refresh_token()
     expires_at = datetime.now(timezone.utc) + timedelta(days=settings.refresh_token_expire_days)
     db_token = models.RefreshToken(
@@ -56,7 +61,7 @@ def revoke_refresh_token(db: Session, db_token: models.RefreshToken):
     return db_token
 
 
-def create_email_verification_token(db: Session, user_id: int):
+def create_email_verification_token(db: Session, user_id: UUID):
     token = generate_token(32)
     expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.email_verify_expire_minutes)
     db_token = models.EmailVerificationToken(
@@ -87,7 +92,7 @@ def mark_email_verified(db: Session, db_token: models.EmailVerificationToken):
     return db_token
 
 
-def create_password_reset_token(db: Session, user_id: int):
+def create_password_reset_token(db: Session, user_id: UUID):
     token = generate_token(32)
     expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.password_reset_expire_minutes)
     db_token = models.PasswordResetToken(

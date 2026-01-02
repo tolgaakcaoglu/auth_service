@@ -44,7 +44,7 @@ def login_for_access_token(
         )
     if not user.email_verified:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Email not verified")
-    access_token = auth.create_access_token(data={"sub": user.email})
+    access_token = auth.create_access_token(data={"sub": str(user.id)})
     refresh_token, _ = crud.create_refresh_token(db, user.id)
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
@@ -58,7 +58,7 @@ def refresh_access_token(payload: schemas.RefreshTokenRequest, db: Session = Dep
         crud.revoke_refresh_token(db, db_token)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token expired")
 
-    access_token = auth.create_access_token(data={"sub": db_token.user.email})
+    access_token = auth.create_access_token(data={"sub": str(db_token.user.id)})
     crud.revoke_refresh_token(db, db_token)
     refresh_token, _ = crud.create_refresh_token(db, db_token.user_id)
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}

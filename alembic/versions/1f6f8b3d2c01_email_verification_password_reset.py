@@ -7,6 +7,7 @@ Create Date: 2024-03-02 00:00:00.000000
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 revision = "1f6f8b3d2c01"
 down_revision = "8b4c3d1c0b12"
@@ -21,8 +22,8 @@ def upgrade() -> None:
     )
     op.create_table(
         "email_verification_tokens",
-        sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("user_id", sa.Integer(), nullable=False),
+        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("user_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("token_hash", sa.String(), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()")),
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),
@@ -51,8 +52,8 @@ def upgrade() -> None:
     )
     op.create_table(
         "password_reset_tokens",
-        sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("user_id", sa.Integer(), nullable=False),
+        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("user_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("token_hash", sa.String(), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()")),
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),

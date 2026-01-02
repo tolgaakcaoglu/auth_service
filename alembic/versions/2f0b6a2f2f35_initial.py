@@ -7,6 +7,7 @@ Create Date: 2024-03-02 00:00:00.000000
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 revision = "2f0b6a2f2f35"
 down_revision = None
@@ -17,7 +18,7 @@ depends_on = None
 def upgrade() -> None:
     op.create_table(
         "users",
-        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("email", sa.String(), nullable=False),
         sa.Column("hashed_password", sa.String(), nullable=False),
         sa.Column("is_active", sa.Boolean(), nullable=True),

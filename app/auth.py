@@ -2,6 +2,7 @@ from passlib.context import CryptContext
 from datetime import datetime, timedelta
 import hashlib
 import secrets
+from uuid import UUID
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -53,12 +54,16 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     )
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=["HS256"])
-        email: str = payload.get("sub")
-        if email is None:
+        subject = payload.get("sub")
+        if subject is None:
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-    user = crud.get_user_by_email(db, email=email)
+    try:
+        user_id = UUID(str(subject))
+    except (TypeError, ValueError):
+        raise credentials_exception
+    user = crud.get_user_by_id(db, user_id=user_id)
     if user is None:
         raise credentials_exception
     return user

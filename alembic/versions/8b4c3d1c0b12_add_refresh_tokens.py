@@ -7,6 +7,7 @@ Create Date: 2024-03-02 00:00:00.000000
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 revision = "8b4c3d1c0b12"
 down_revision = "2f0b6a2f2f35"
@@ -17,8 +18,8 @@ depends_on = None
 def upgrade() -> None:
     op.create_table(
         "refresh_tokens",
-        sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("user_id", sa.Integer(), nullable=False),
+        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("user_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("token_hash", sa.String(), nullable=False),
         sa.Column("revoked", sa.Boolean(), nullable=False, server_default=sa.text("false")),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()")),
