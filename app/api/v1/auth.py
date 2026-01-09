@@ -123,6 +123,14 @@ def read_users_me(current_user=Depends(auth.get_current_user)):
     return current_user
 
 
+@router.post("/users/id", response_model=schemas.UserIdResponse)
+def get_user_id_by_email(payload: schemas.EmailRequest, db: Session = Depends(db.get_db)):
+    user = crud.get_user_by_email(db, payload.email)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return {"id": user.id}
+
+
 def _is_expired(expires_at: datetime) -> bool:
     now = datetime.now(timezone.utc)
     if expires_at.tzinfo is None:

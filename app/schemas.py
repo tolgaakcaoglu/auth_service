@@ -49,6 +49,10 @@ class EmailRequest(BaseModel):
     email: EmailStr
 
 
+class UserIdResponse(BaseModel):
+    id: UUID
+
+
 class EmailTokenRequest(BaseModel):
     token: str
 
