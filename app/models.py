@@ -30,6 +30,11 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan",
     )
+    auth_events = relationship(
+        "AuthEvent",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
 
 
 class RefreshToken(Base):
@@ -69,3 +74,50 @@ class PasswordResetToken(Base):
     used_at = Column(DateTime(timezone=True), nullable=True)
 
     user = relationship("User", back_populates="password_reset_tokens")
+
+
+class AuthEvent(Base):
+    __tablename__ = "auth_events"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    event_type = Column(String, nullable=False)
+    ip_address = Column(String, nullable=True)
+    service_id = Column(UUID(as_uuid=True), ForeignKey("services.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User", back_populates="auth_events")
+    service = relationship("Service", back_populates="auth_events")
+
+
+class Service(Base):
+    __tablename__ = "services"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
+    name = Column(String, unique=True, nullable=False)
+    domain = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    api_keys = relationship(
+        "ServiceApiKey",
+        back_populates="service",
+        cascade="all, delete-orphan",
+    )
+    auth_events = relationship(
+        "AuthEvent",
+        back_populates="service",
+    )
+
+
+class ServiceApiKey(Base):
+    __tablename__ = "service_api_keys"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
+    service_id = Column(UUID(as_uuid=True), ForeignKey("services.id", ondelete="CASCADE"), nullable=False, index=True)
+    key_hash = Column(String, unique=True, nullable=False, index=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    last_used_at = Column(DateTime(timezone=True), nullable=True)
+
+    service = relationship("Service", back_populates="api_keys")

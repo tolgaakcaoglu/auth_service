@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>API Key Created</h1>
+<div class="card">
+  <div class="service-name">Service: {{ service.name }}</div>
+  <p>Key ID: <code>{{ api_key_id }}</code></p>
+  <p>API Key (show once):</p>
+  <pre class="key-box">{{ api_key }}</pre>
+  <a href="/admin/services">Back to Services</a>
+</div>
+{% endblock %}

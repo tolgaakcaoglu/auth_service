@@ -25,6 +25,13 @@ def register(request: Request, user_in: schemas.UserCreate, db: Session = Depend
     token, _ = crud.create_email_verification_token(db, user.id)
     subject, body = build_verification_email(token)
     send_email(user.email, subject, body)
+    crud.create_auth_event(
+        db,
+        user_id=user.id,
+        event_type="register",
+        ip_address=_get_request_ip(request),
+        service_id=_get_request_service_id(request),
+    )
     return user
 
 
@@ -46,11 +53,22 @@ def login_for_access_token(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Email not verified")
     access_token = auth.create_access_token(data={"sub": str(user.id)})
     refresh_token, _ = crud.create_refresh_token(db, user.id)
+    crud.create_auth_event(
+        db,
+        user_id=user.id,
+        event_type="login",
+        ip_address=_get_request_ip(request),
+        service_id=_get_request_service_id(request),
+    )
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 
 @router.post("/token/refresh", response_model=schemas.TokenPair)
-def refresh_access_token(payload: schemas.RefreshTokenRequest, db: Session = Depends(db.get_db)):
+def refresh_access_token(
+    request: Request,
+    payload: schemas.RefreshTokenRequest,
+    db: Session = Depends(db.get_db),
+):
     db_token = crud.get_refresh_token(db, payload.refresh_token)
     if not db_token or db_token.revoked:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
@@ -61,6 +79,13 @@ def refresh_access_token(payload: schemas.RefreshTokenRequest, db: Session = Dep
     access_token = auth.create_access_token(data={"sub": str(db_token.user.id)})
     crud.revoke_refresh_token(db, db_token)
     refresh_token, _ = crud.create_refresh_token(db, db_token.user_id)
+    crud.create_auth_event(
+        db,
+        user_id=db_token.user_id,
+        event_type="token_refresh",
+        ip_address=_get_request_ip(request),
+        service_id=_get_request_service_id(request),
+    )
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 
@@ -136,3 +161,13 @@ def _is_expired(expires_at: datetime) -> bool:
     if expires_at.tzinfo is None:
         expires_at = expires_at.replace(tzinfo=timezone.utc)
     return expires_at < now
+
+
+def _get_request_ip(request: Request) -> str | None:
+    if request.client:
+        return request.client.host
+    return None
+
+
+def _get_request_service_id(request: Request):
+    return getattr(request.state, "service_id", None)

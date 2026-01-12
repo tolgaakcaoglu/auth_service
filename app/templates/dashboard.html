@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Dashboard</h1>
+
+<section class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-label">Total Users</div>
+    <div class="stat-value">{{ totals.users }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Total Services</div>
+    <div class="stat-value">{{ totals.services }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Service API Keys</div>
+    <div class="stat-value">{{ totals.service_keys }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Auth Events</div>
+    <div class="stat-value">{{ totals.auth_events }}</div>
+  </div>
+</section>
+
+<section class="card">
+  <div class="section-header">
+    <h2>User Activity</h2>
+    <label class="filter">
+      <span>Range</span>
+      <select id="activity-filter">
+        <option value="day" selected>Daily</option>
+        <option value="week">Weekly</option>
+        <option value="month">Monthly</option>
+      </select>
+    </label>
+  </div>
+
+  {% set chart = charts.user_activity_day %}
+  <div class="chart" data-activity="day">
+    {% for item in chart['items'] %}
+    <div class="bar" style="height: {{ (item.value / chart['max']) * 100 }}%">
+      <span class="bar-value">{{ item.value }}</span>
+      <span class="bar-label">{{ item.label }}</span>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% set chart = charts.user_activity_week %}
+  <div class="chart is-hidden" data-activity="week">
+    {% for item in chart['items'] %}
+    <div class="bar" style="height: {{ (item.value / chart['max']) * 100 }}%">
+      <span class="bar-value">{{ item.value }}</span>
+      <span class="bar-label">{{ item.label }}</span>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% set chart = charts.user_activity_month %}
+  <div class="chart is-hidden" data-activity="month">
+    {% for item in chart['items'] %}
+    <div class="bar" style="height: {{ (item.value / chart['max']) * 100 }}%">
+      <span class="bar-value">{{ item.value }}</span>
+      <span class="bar-label">{{ item.label }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="card">
+  <h2>Services Added (Monthly)</h2>
+  {% set chart = charts.services_monthly %}
+  <div class="chart">
+    {% for item in chart['items'] %}
+    <div class="bar" style="height: {{ (item.value / chart['max']) * 100 }}%">
+      <span class="bar-value">{{ item.value }}</span>
+      <span class="bar-label">{{ item.label }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="card">
+  <h2>Latest Auth Events</h2>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>Type</th>
+        <th>User</th>
+        <th>Service</th>
+        <th>IP</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for event, user, service in latest_events %}
+      <tr>
+        <td>{{ event.created_at }}</td>
+        <td>{{ event.event_type }}</td>
+        <td>{{ user.email if user else "-" }}</td>
+        <td>{{ service.name if service else "-" }}</td>
+        <td>{{ event.ip_address or "-" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+<script>
+  (function () {
+    var filter = document.getElementById("activity-filter");
+    if (!filter) return;
+    var charts = document.querySelectorAll("[data-activity]");
+    filter.addEventListener("change", function (event) {
+      var value = event.target.value;
+      charts.forEach(function (chart) {
+        var isMatch = chart.getAttribute("data-activity") === value;
+        chart.classList.toggle("is-hidden", !isMatch);
+      });
+    });
+  })();
+</script>
+{% endblock %}

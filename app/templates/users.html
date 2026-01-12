@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Users</h1>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Email</th>
+      <th>Active</th>
+      <th>Email Verified</th>
+      <th>Created</th>
+      <th>Last Event</th>
+      <th>Last Service</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for user, event, service in rows %}
+    <tr>
+      <td>{{ user.email }}</td>
+      <td>{{ "yes" if user.is_active else "no" }}</td>
+      <td>{{ "yes" if user.email_verified else "no" }}</td>
+      <td>{{ user.created_at }}</td>
+      <td>{{ event.event_type if event else "-" }}</td>
+      <td>{{ service.name if service else "-" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Auth Events</h1>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Time</th>
+      <th>Type</th>
+      <th>User</th>
+      <th>Service</th>
+      <th>IP</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for event, user, service in events %}
+    <tr>
+      <td>{{ event.created_at }}</td>
+      <td>{{ event.event_type }}</td>
+      <td>{{ user.email if user else "-" }}</td>
+      <td>{{ service.name if service else "-" }}</td>
+      <td>{{ event.ip_address or "-" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Services</h1>
+
+<section class="card">
+  <h2>Create Service</h2>
+  <form method="post" action="/admin/services/create" class="form">
+    <label>
+      Name
+      <input type="text" name="name" required />
+    </label>
+    <label>
+      Domain
+      <input type="text" name="domain" />
+    </label>
+    <button type="submit">Create + API Key</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Existing Services</h2>
+  {% for service in services %}
+  <div class="service-block">
+    <div class="service-header">
+      <div>
+        <div class="service-name">{{ service.name }}</div>
+        <div class="service-meta">{{ service.domain or "-" }}</div>
+      </div>
+      <form method="post" action="/admin/services/{{ service.id }}/toggle">
+        <input type="hidden" name="is_active" value="{{ 'false' if service.is_active else 'true' }}" />
+        <button type="submit" class="secondary">
+          {{ "Disable" if service.is_active else "Enable" }}
+        </button>
+      </form>
+    </div>
+
+    <div class="service-actions">
+      <form method="post" action="/admin/services/{{ service.id }}/keys">
+        <button type="submit">Create API Key</button>
+      </form>
+    </div>
+
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Key ID</th>
+          <th>Active</th>
+          <th>Created</th>
+          <th>Last Used</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for key in service_keys[service.id] %}
+        <tr>
+          <td>{{ key.id }}</td>
+          <td>{{ "yes" if key.is_active else "no" }}</td>
+          <td>{{ key.created_at }}</td>
+          <td>{{ key.last_used_at or "-" }}</td>
+          <td>
+            <form method="post" action="/admin/keys/{{ key.id }}/toggle">
+              <input type="hidden" name="is_active" value="{{ 'false' if key.is_active else 'true' }}" />
+              <button type="submit" class="secondary">
+                {{ "Disable" if key.is_active else "Enable" }}
+              </button>
+            </form>
+            <form method="post" action="/admin/keys/{{ key.id }}/delete">
+              <button type="submit" class="danger-icon" title="Delete">Sil</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endfor %}
+</section>
+{% endblock %}

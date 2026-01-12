@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     register_rate_limit: str = "5/10 minute"
     token_rate_limit: str = "10/5 minute"
     log_file: str = "app.log"
+    admin_user: str = "admin"
+    admin_password: str = "admin"
 
     model_config = SettingsConfigDict(env_file=".env")
 

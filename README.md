@@ -1,78 +1,126 @@
-# FastAPI PostgreSQL Auth Service
+# Auth Service
 
-Minimal authentication service using FastAPI, PostgreSQL and JWT.
+FastAPI + PostgreSQL authentication service with JWT, refresh tokens, email verification, password reset, service API keys, and an admin UI.
 
-Quick start
+## Features
 
-1. Create a `.env` (see `.env.example`) and set `DATABASE_URL` and `SECRET_KEY`.
-2. Install dependencies:
+- JWT access + refresh token rotation
+- Email verification + password reset
+- Service API keys (per-service allowlisting + usage tracking)
+- Admin UI (dashboard, users, services, API keys, auth events)
+- Alembic migrations
+- Rate limiting and request logging
 
-```bash
-python -m pip install -r requirements.txt
-```
+## Quick Start (Docker)
 
-3. Run database migrations (creates tables):
-
-```bash
-python scripts/create_db.py
-alembic upgrade head
-```
-
-4. Run the app (example using uvicorn):
+1) Copy env file and update required values:
 
 ```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+cp .env.example .env
 ```
 
-Endpoints
+Required:
+- `SECRET_KEY`
+- `ADMIN_USER`, `ADMIN_PASSWORD`
+
+2) Start services:
+
+```bash
+docker compose up --build
+```
+
+3) Create a service + API key:
+
+```bash
+docker compose exec auth_service python scripts/create_service_api_key.py --name my-service --domain my-service.example.com
+```
+
+The API runs on `http://localhost:8050`.
+
+## Access
+
+- API base: `http://localhost:8050`
+- Admin UI: `http://localhost:8050/admin` (Basic Auth)
+- Postgres on host: `localhost:5433` (optional, for direct DB access)
+
+## Authentication Model
+
+- All non-link API endpoints require `X-API-Key`.
+- Link-based endpoints do not require `X-API-Key`: `GET /verify-email`, `POST /password/reset`.
+- Admin UI does not require `X-API-Key`, but uses Basic Auth.
+- User endpoints that return user data require Bearer tokens (e.g., `GET /users/me`).
+
+## Auth Service API
 
 - `POST /register` — register a new user
-- `POST /token` — obtain access + refresh token (OAuth2 password)
+- `POST /token` — obtain access + refresh token
 - `POST /token/refresh` — rotate refresh token + obtain new access token
 - `POST /logout` — revoke refresh token
-- `GET /verify-email` — verify email via token (sent by email)
+- `GET /verify-email` — verify email via token (link)
 - `POST /verify-email/resend` — resend verification email
 - `POST /password/forgot` — send reset email
-- `POST /password/reset` — reset password with token
+- `POST /password/reset` — reset password with token (link)
 - `GET /users/me` — get current user (requires Bearer token)
 - `GET /health` — healthcheck (includes DB check)
 
-Migrations (Alembic)
+## Admin UI
 
-- `alembic.ini` is scaffolded, but the connection URL is read from `DATABASE_URL` at runtime in `alembic/env.py` for safety and flexibility.
-- The initial migration lives in `alembic/versions/2f0b6a2f2f35_initial.py`. New schema changes should be captured with:
+- URL: `GET /admin`
+- Basic Auth required
+- Credentials from `.env`: `ADMIN_USER`, `ADMIN_PASSWORD`
+- Admin UI does **not** require `X-API-Key`
+
+## Environment Variables
+
+Required:
+- `DATABASE_URL`
+- `SECRET_KEY`
+
+Common:
+- `ACCESS_TOKEN_EXPIRE_MINUTES`
+- `REFRESH_TOKEN_EXPIRE_DAYS`
+- `EMAIL_VERIFY_EXPIRE_MINUTES`
+- `PASSWORD_RESET_EXPIRE_MINUTES`
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM_NAME`, `SMTP_FROM_EMAIL`
+- `APP_BASE_URL` (defaults to `http://localhost:8050`)
+- `REGISTER_RATE_LIMIT`, `TOKEN_RATE_LIMIT`
+- `LOG_FILE`
+- `ADMIN_USER`, `ADMIN_PASSWORD`
+
+Notes:
+- Docker Compose overrides `DATABASE_URL` and `APP_BASE_URL` for the container.
+- Service API keys are stored hashed; the plain key is shown only once on creation.
+
+## Migrations (Alembic)
+
+Docker Compose runs `alembic upgrade head` on start.
+
+To create a new migration:
 
 ```bash
-alembic revision --autogenerate -m "describe change"
+docker compose exec auth_service alembic revision --autogenerate -m "describe change"
 ```
 
-- Apply latest migrations:
+## Notes
 
-```bash
-alembic upgrade head
+- Refresh tokens are stored in DB and rotated on `/token/refresh`.
+- Email verification must be completed before login.
+- User IDs are UUIDs; access token `sub` is a UUID string.
+
+## Project Layout
+
 ```
-
-- Roll back one migration:
-
-```bash
-alembic downgrade -1
+app/
+  api/v1/        # REST endpoints
+  templates/     # Admin UI templates
+  static/        # Admin UI assets
+  models.py      # SQLAlchemy models
+  crud.py        # DB queries
+  auth.py        # JWT + password helpers
+  service_auth.py# API key enforcement
+alembic/
+  versions/      # migrations
+scripts/
+  create_db.py
+  create_service_api_key.py
 ```
-
-- See history/current revision:
-
-```bash
-alembic history
-alembic current
-```
-
-Notes (TR)
-
-- Autogenerate icin modellerin import edilip metadata'nin yuklenmesi gerekir; bu zaten `alembic/env.py` icinde yapilir.
-- `DATABASE_URL` ortam degiskenini ayarlamadan migration calistirmayin.
-- Veritabani yoksa once olusturmak icin `python scripts/create_db.py` kullanin. Varsayilan admin DB `postgres`'tir; gerekirse `POSTGRES_ADMIN_DB` ile degistirebilirsiniz.
-- Refresh token'lar DB'de saklanir ve her `/token/refresh` cagrisinda rotate edilir (coklu cihaz desteklenir).
-- E-posta dogrulama Gmail SMTP ile gonderilir. Gmail'de 2FA acip "App Password" uretin ve `.env`'e ekleyin.
-- DOGRULAMA suresi 5 dakikadir (`EMAIL_VERIFY_EXPIRE_MINUTES=5`). E-posta dogrulanmadan login izinli degildir.
-- `/register` ve `/token` icin rate limit uygulanir. Degerler `.env` ile degistirilebilir: `REGISTER_RATE_LIMIT`, `TOKEN_RATE_LIMIT`.
-- Basit request logging aciktir ve `X-Request-ID` header'i eklenir (extra bagimlilik gerekmez).
-- Kullanici ID'leri UUID'dir; access token `sub` claim'i UUID string olarak gonderilir.
