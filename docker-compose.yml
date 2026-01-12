@@ -27,8 +27,6 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
       POSTGRES_DB: auth_db_prod
-    ports:
-      - "5441:5432"
     volumes:
       - auth_service_prod_db:/var/lib/postgresql/data
     healthcheck:
@@ -36,6 +34,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - prod_internal
 
   auth_dev:
     build: .
@@ -72,7 +72,15 @@ services:
     command: >
       bash -c "python scripts/create_db.py && alembic upgrade head &&
       uvicorn app.main:app --host 0.0.0.0 --port 8050"
+    networks:
+      - prod_internal
+      - prod_public
 
 volumes:
   auth_service_dev_db:
   auth_service_prod_db:
+
+networks:
+  prod_internal:
+    internal: true
+  prod_public:
