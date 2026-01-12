@@ -13,35 +13,39 @@ FastAPI + PostgreSQL authentication service with JWT, refresh tokens, email veri
 
 ## Quick Start (Docker)
 
-1) Copy env file and update required values:
+1) Copy env example files and update required values:
 
 ```bash
-cp .env.example .env
+cp .env.dev.example .env.dev
+cp .env.prod.example .env.prod
 ```
 
 Required:
 - `SECRET_KEY`
 - `ADMIN_USER`, `ADMIN_PASSWORD`
 
-2) Start services:
+2) Start dev or prod:
 
 ```bash
-docker compose up --build
+docker compose --profile dev up --build
+# or
+docker compose --profile prod up --build
 ```
 
 3) Create a service + API key:
 
 ```bash
-docker compose exec auth_service python scripts/create_service_api_key.py --name my-service --domain my-service.example.com
+docker compose --profile dev exec auth_dev python scripts/create_service_api_key.py --name my-service --domain my-service.example.com
 ```
 
-The API runs on `http://localhost:8050`.
+The dev API runs on `http://localhost:8050`, prod on `http://localhost:9050`.
 
 ## Access
 
-- API base: `http://localhost:8050`
-- Admin UI: `http://localhost:8050/admin` (Basic Auth)
-- Postgres on host: `localhost:5433` (optional, for direct DB access)
+- Dev API base: `http://localhost:8050`
+- Prod API base: `http://localhost:9050`
+- Admin UI: `http://localhost:8050/admin` (dev) / `http://localhost:9050/admin` (prod)
+- Postgres on host: `localhost:5440` (dev) / `localhost:5441` (prod)
 
 ## Authentication Model
 
@@ -67,7 +71,7 @@ The API runs on `http://localhost:8050`.
 
 - URL: `GET /admin`
 - Basic Auth required
-- Credentials from `.env`: `ADMIN_USER`, `ADMIN_PASSWORD`
+- Credentials from `.env.dev` / `.env.prod`: `ADMIN_USER`, `ADMIN_PASSWORD`
 - Admin UI does **not** require `X-API-Key`
 
 ## Environment Variables
@@ -88,7 +92,8 @@ Common:
 - `ADMIN_USER`, `ADMIN_PASSWORD`
 
 Notes:
-- Docker Compose overrides `DATABASE_URL` and `APP_BASE_URL` for the container.
+- Docker Compose overrides `DATABASE_URL` and `APP_BASE_URL` for each profile.
+- Dev and prod use different Postgres services, ports, and volumes.
 - Service API keys are stored hashed; the plain key is shown only once on creation.
 
 ## Migrations (Alembic)
@@ -98,7 +103,9 @@ Docker Compose runs `alembic upgrade head` on start.
 To create a new migration:
 
 ```bash
-docker compose exec auth_service alembic revision --autogenerate -m "describe change"
+docker compose --profile dev exec auth_dev alembic revision --autogenerate -m "describe change"
+# or
+docker compose --profile prod exec auth_prod alembic revision --autogenerate -m "describe change"
 ```
 
 ## Notes
