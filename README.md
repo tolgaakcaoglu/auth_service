@@ -1,5 +1,7 @@
 # Auth Service
 
+TR: `README_TR.md`
+
 FastAPI + PostgreSQL authentication service with JWT, refresh tokens, email verification, password reset, service API keys, and an admin UI.
 
 ## Features
