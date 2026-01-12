@@ -13,7 +13,6 @@ build/
 venv/
 env/
 .env
-.env.*
 app.log
 *.log
 .DS_Store
