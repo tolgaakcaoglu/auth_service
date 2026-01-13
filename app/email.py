@@ -22,7 +22,7 @@ def send_email(to_email: str, subject: str, body: str) -> None:
 
 
 def build_verification_email(token: str) -> tuple[str, str]:
-    link = f"{settings.app_base_url}/verify-email?token={token}"
+    link = f"{settings.app_base_url}{settings.root_path}/verify-email?token={token}"
     subject = "Verify your email"
     body = (
         "Please verify your email by clicking the link below:\n\n"
@@ -33,7 +33,7 @@ def build_verification_email(token: str) -> tuple[str, str]:
 
 
 def build_password_reset_email(token: str) -> tuple[str, str]:
-    link = f"{settings.app_base_url}/reset-password?token={token}"
+    link = f"{settings.app_base_url}{settings.root_path}/password/reset?token={token}"
     subject = "Reset your password"
     body = (
         "You can reset your password using the link below:\n\n"

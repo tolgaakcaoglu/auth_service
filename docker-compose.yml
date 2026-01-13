@@ -48,7 +48,6 @@ services:
       - .env.dev
     environment:
       DATABASE_URL: postgresql://postgres:password@db_dev:5432/auth_db_dev
-      APP_BASE_URL: http://localhost:8050
     ports:
       - "8050:8050"
     command: >
@@ -66,7 +65,6 @@ services:
       - .env.prod
     environment:
       DATABASE_URL: postgresql://postgres:password@db_prod:5432/auth_db_prod
-      APP_BASE_URL: http://localhost:8050
     expose:
       - "8050"
     command: >

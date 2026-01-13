@@ -19,7 +19,12 @@ def require_service_api_key(
         or request.url.path.startswith("/auth/static")
     ):
         return None
-    if request.url.path in {"/verify-email", "/password/reset"}:
+    if request.url.path in {
+        "/verify-email",
+        "/auth/verify-email",
+        "/password/reset",
+        "/auth/password/reset",
+    }:
         return None
     if not x_api_key:
         raise HTTPException(

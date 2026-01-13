@@ -14,13 +14,13 @@ class Settings(BaseSettings):
     smtp_password: str | None = None
     smtp_from_name: str = "Auth Service"
     smtp_from_email: str | None = None
-    app_base_url: str = "http://localhost:8000"
+    app_base_url: str = "http://localhost:8050"
     register_rate_limit: str = "5/10 minute"
     token_rate_limit: str = "10/5 minute"
     log_file: str = "app.log"
     admin_user: str = "admin"
     admin_password: str = "admin"
-
+    root_path: str = "/auth"
     model_config = SettingsConfigDict(env_file=".env")
 
 

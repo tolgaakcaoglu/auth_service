@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -10,6 +12,7 @@ from ...email import send_email, build_verification_email, build_password_reset_
 from ...limiter import limiter
 
 router = APIRouter()
+templates = Jinja2Templates(directory="app/templates")
 
 
 @router.post("/register", response_model=schemas.UserRead)
@@ -127,6 +130,14 @@ def forgot_password(payload: schemas.EmailRequest, db: Session = Depends(db.get_
         subject, body = build_password_reset_email(token)
         send_email(user.email, subject, body)
     return {"detail": "If the account exists, a reset email was sent"}
+
+
+@router.get("/password/reset", response_class=HTMLResponse)
+def reset_password_form(request: Request, token: str | None = None):
+    return templates.TemplateResponse(
+        "reset_password.html",
+        {"request": request, "token": token},
+    )
 
 
 @router.post("/password/reset")
