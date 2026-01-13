@@ -12,7 +12,12 @@ def require_service_api_key(
     x_api_key: str | None = Header(default=None, alias=API_KEY_HEADER),
     db: Session = Depends(get_db),
 ):
-    if request.url.path.startswith("/admin") or request.url.path.startswith("/static"):
+    if (
+        request.url.path.startswith("/admin")
+        or request.url.path.startswith("/auth/admin")
+        or request.url.path.startswith("/static")
+        or request.url.path.startswith("/auth/static")
+    ):
         return None
     if request.url.path in {"/verify-email", "/password/reset"}:
         return None

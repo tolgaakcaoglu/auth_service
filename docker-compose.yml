@@ -3,7 +3,6 @@ version: "3.9"
 services:
   db_dev:
     image: postgres:16
-    container_name: auth-db-dev
     profiles: ["dev"]
     environment:
       POSTGRES_USER: postgres
@@ -21,7 +20,6 @@ services:
 
   db_prod:
     image: postgres:16
-    container_name: auth-db-prod
     profiles: ["prod"]
     environment:
       POSTGRES_USER: postgres
@@ -55,7 +53,7 @@ services:
       - "8050:8050"
     command: >
       bash -c "python scripts/create_db.py && alembic upgrade head &&
-      uvicorn app.main:app --host 0.0.0.0 --port 8050"
+      uvicorn app.main:app --host 0.0.0.0 --port 8050 --root-path /auth"
 
   auth_prod:
     build: .
@@ -68,12 +66,12 @@ services:
       - .env.prod
     environment:
       DATABASE_URL: postgresql://postgres:password@db_prod:5432/auth_db_prod
-      APP_BASE_URL: http://localhost:9050
+      APP_BASE_URL: http://localhost:8050
     expose:
       - "8050"
     command: >
       bash -c "python scripts/create_db.py && alembic upgrade head &&
-      uvicorn app.main:app --host 0.0.0.0 --port 8050"
+      uvicorn app.main:app --host 0.0.0.0 --port 8050 --root-path /auth"
     networks:
       - prod_net
 
