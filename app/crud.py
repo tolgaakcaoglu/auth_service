@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 from uuid import UUID
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from . import models, schemas
 from .auth import hash_token, generate_token, hash_refresh_token, generate_refresh_token
 from .config import settings
@@ -10,6 +10,18 @@ from .auth import get_password_hash
 
 def get_user_by_email(db: Session, email: str):
     return db.query(models.User).filter(models.User.email == email).first()
+
+
+def get_user_by_phone(db: Session, phone: str):
+    return db.query(models.User).filter(models.User.phone == phone).first()
+
+
+def get_user_by_identifier(db: Session, identifier: str):
+    return (
+        db.query(models.User)
+        .filter(or_(models.User.email == identifier, models.User.phone == identifier))
+        .first()
+    )
 
 
 def get_user_by_id(db: Session, user_id: UUID):
@@ -25,16 +37,23 @@ def get_service_by_id(db: Session, service_id: UUID):
 
 
 def create_user(db: Session, user: schemas.UserCreate):
+    if not user.email and not user.phone:
+        raise ValueError("Email or phone is required")
     hashed = get_password_hash(user.password)
-    db_user = models.User(email=user.email, hashed_password=hashed)
+    db_user = models.User(
+        email=user.email,
+        phone=user.phone,
+        hashed_password=hashed,
+        email_verified=user.email is None,
+    )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
     return db_user
 
 
-def authenticate_user(db: Session, email: str, password: str):
-    user = get_user_by_email(db, email)
+def authenticate_user(db: Session, identifier: str, password: str):
+    user = get_user_by_identifier(db, identifier)
     if not user:
         return None
     from .auth import verify_password

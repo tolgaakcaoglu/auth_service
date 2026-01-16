@@ -4,7 +4,7 @@
 
 <section class="card">
   <h2>Create Service</h2>
-  <form method="post" action="/admin/services/create" class="form">
+  <form method="post" action="/auth/admin/services/create" class="form">
     <label>
       Name
       <input type="text" name="name" required />
@@ -26,7 +26,7 @@
         <div class="service-name">{{ service.name }}</div>
         <div class="service-meta">{{ service.domain or "-" }}</div>
       </div>
-      <form method="post" action="/admin/services/{{ service.id }}/toggle">
+      <form method="post" action="/auth/admin/services/{{ service.id }}/toggle">
         <input type="hidden" name="is_active" value="{{ 'false' if service.is_active else 'true' }}" />
         <button type="submit" class="secondary">
           {{ "Disable" if service.is_active else "Enable" }}
@@ -35,7 +35,7 @@
     </div>
 
     <div class="service-actions">
-      <form method="post" action="/admin/services/{{ service.id }}/keys">
+      <form method="post" action="/auth/admin/services/{{ service.id }}/keys">
         <button type="submit">Create API Key</button>
       </form>
     </div>
@@ -58,13 +58,13 @@
           <td>{{ key.created_at }}</td>
           <td>{{ key.last_used_at or "-" }}</td>
           <td>
-            <form method="post" action="/admin/keys/{{ key.id }}/toggle">
+            <form method="post" action="/auth/admin/keys/{{ key.id }}/toggle">
               <input type="hidden" name="is_active" value="{{ 'false' if key.is_active else 'true' }}" />
               <button type="submit" class="secondary">
                 {{ "Disable" if key.is_active else "Enable" }}
               </button>
             </form>
-            <form method="post" action="/admin/keys/{{ key.id }}/delete">
+            <form method="post" action="/auth/admin/keys/{{ key.id }}/delete">
               <button type="submit" class="danger-icon" title="Delete">Sil</button>
             </form>
           </td>

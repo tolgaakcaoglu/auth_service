@@ -1,13 +1,14 @@
 import re
 
-from pydantic import BaseModel, EmailStr, ConfigDict, field_validator
+from pydantic import BaseModel, EmailStr, ConfigDict, field_validator, model_validator
 from typing import Optional
 from datetime import datetime
 from uuid import UUID
 
 
 class UserCreate(BaseModel):
-    email: EmailStr
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
     password: str
 
     @field_validator("password")
@@ -15,10 +16,27 @@ class UserCreate(BaseModel):
     def validate_password(cls, value: str) -> str:
         return _validate_password(value)
 
+    @field_validator("phone")
+    @classmethod
+    def normalize_phone(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return value
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("Phone must not be empty")
+        return cleaned
+
+    @model_validator(mode="after")
+    def validate_identifier(self) -> "UserCreate":
+        if not self.email and not self.phone:
+            raise ValueError("Email or phone is required")
+        return self
+
 
 class UserRead(BaseModel):
     id: UUID
-    email: EmailStr
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
     is_active: bool
     email_verified: bool
     created_at: Optional[datetime]

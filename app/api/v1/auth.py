@@ -18,16 +18,22 @@ templates = Jinja2Templates(directory="app/templates")
 @router.post("/register", response_model=schemas.UserRead)
 @limiter.limit(settings.register_rate_limit)
 def register(request: Request, user_in: schemas.UserCreate, db: Session = Depends(db.get_db)):
-    existing = crud.get_user_by_email(db, user_in.email)
-    if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
+    if user_in.email:
+        existing = crud.get_user_by_email(db, user_in.email)
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already registered")
+    if user_in.phone:
+        existing = crud.get_user_by_phone(db, user_in.phone)
+        if existing:
+            raise HTTPException(status_code=400, detail="Phone already registered")
     try:
         user = crud.create_user(db, user_in)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    token, _ = crud.create_email_verification_token(db, user.id)
-    subject, body = build_verification_email(token)
-    send_email(user.email, subject, body)
+    if user.email:
+        token, _ = crud.create_email_verification_token(db, user.id)
+        subject, body = build_verification_email(token)
+        send_email(user.email, subject, body)
     crud.create_auth_event(
         db,
         user_id=user.id,
@@ -52,7 +58,7 @@ def login_for_access_token(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    if not user.email_verified:
+    if user.email and not user.email_verified:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Email not verified")
     access_token = auth.create_access_token(data={"sub": str(user.id)})
     refresh_token, _ = crud.create_refresh_token(db, user.id)
