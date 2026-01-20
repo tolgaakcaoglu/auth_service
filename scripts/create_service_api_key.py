@@ -8,13 +8,24 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Create service and API key")
     parser.add_argument("--name", required=True, help="Service name")
     parser.add_argument("--domain", default=None, help="Service domain")
+    parser.add_argument(
+        "--verification-method",
+        default="link",
+        choices=["link", "code"],
+        help="Email verification method",
+    )
     args = parser.parse_args()
 
     db = SessionLocal()
     try:
         service = crud.get_service_by_name(db, args.name)
         if not service:
-            service = crud.create_service(db, args.name, args.domain)
+            service = crud.create_service(
+                db,
+                args.name,
+                args.domain,
+                verification_method=args.verification_method,
+            )
         api_key, db_key = crud.create_service_api_key(db, service.id)
     finally:
         db.close()

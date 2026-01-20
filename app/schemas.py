@@ -75,6 +75,19 @@ class EmailTokenRequest(BaseModel):
     token: str
 
 
+class EmailVerificationCodeRequest(BaseModel):
+    email: EmailStr
+    code: str
+
+    @field_validator("code")
+    @classmethod
+    def validate_code(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not re.fullmatch(r"\d{6}", cleaned):
+            raise ValueError("Code must be 6 digits")
+        return cleaned
+
+
 class PasswordResetRequest(BaseModel):
     token: str
     password: str

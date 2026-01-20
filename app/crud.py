@@ -52,6 +52,20 @@ def create_user(db: Session, user: schemas.UserCreate):
     return db_user
 
 
+def create_user_from_oauth(db: Session, email: str):
+    hashed = get_password_hash(generate_token(24))
+    db_user = models.User(
+        email=email,
+        phone=None,
+        hashed_password=hashed,
+        email_verified=True,
+    )
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+
 def authenticate_user(db: Session, identifier: str, password: str):
     user = get_user_by_identifier(db, identifier)
     if not user:
@@ -89,8 +103,9 @@ def revoke_refresh_token(db: Session, db_token: models.RefreshToken):
     return db_token
 
 
-def create_email_verification_token(db: Session, user_id: UUID):
-    token = generate_token(32)
+def create_email_verification_token(db: Session, user_id: UUID, token: str | None = None):
+    if not token:
+        token = generate_token(32)
     expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.email_verify_expire_minutes)
     db_token = models.EmailVerificationToken(
         user_id=user_id,
@@ -108,6 +123,18 @@ def get_email_verification_token(db: Session, token: str):
     return (
         db.query(models.EmailVerificationToken)
         .filter(models.EmailVerificationToken.token_hash == token_hash)
+        .first()
+    )
+
+
+def get_email_verification_token_for_user(db: Session, user_id: UUID, token: str):
+    token_hash = hash_token(token)
+    return (
+        db.query(models.EmailVerificationToken)
+        .filter(
+            models.EmailVerificationToken.user_id == user_id,
+            models.EmailVerificationToken.token_hash == token_hash,
+        )
         .first()
     )
 
@@ -190,8 +217,17 @@ def touch_service_api_key(db: Session, api_key: models.ServiceApiKey):
     return api_key
 
 
-def create_service(db: Session, name: str, domain: str | None = None):
-    db_service = models.Service(name=name, domain=domain)
+def create_service(
+    db: Session,
+    name: str,
+    domain: str | None = None,
+    verification_method: str = "link",
+):
+    db_service = models.Service(
+        name=name,
+        domain=domain,
+        verification_method=verification_method,
+    )
     db.add(db_service)
     db.commit()
     db.refresh(db_service)
@@ -237,6 +273,30 @@ def list_users_with_last_auth_event(db: Session, limit: int = 100, offset: int =
 
 def list_services(db: Session):
     return db.query(models.Service).order_by(models.Service.created_at.desc()).all()
+
+
+def get_oauth_account(db: Session, provider: str, subject: str):
+    return (
+        db.query(models.OAuthAccount)
+        .filter(
+            models.OAuthAccount.provider == provider,
+            models.OAuthAccount.subject == subject,
+        )
+        .first()
+    )
+
+
+def create_oauth_account(db: Session, user_id: UUID, provider: str, subject: str, email: str | None):
+    db_account = models.OAuthAccount(
+        user_id=user_id,
+        provider=provider,
+        subject=subject,
+        email=email,
+    )
+    db.add(db_account)
+    db.commit()
+    db.refresh(db_account)
+    return db_account
 
 
 def list_service_api_keys(db: Session, service_id: UUID):

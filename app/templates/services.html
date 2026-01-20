@@ -13,6 +13,13 @@
       Domain
       <input type="text" name="domain" />
     </label>
+    <label>
+      Verification Method
+      <select name="verification_method">
+        <option value="link" selected>Link</option>
+        <option value="code">Code</option>
+      </select>
+    </label>
     <button type="submit">Create + API Key</button>
   </form>
 </section>
@@ -25,6 +32,7 @@
       <div>
         <div class="service-name">{{ service.name }}</div>
         <div class="service-meta">{{ service.domain or "-" }}</div>
+        <div class="service-meta">Verification: {{ service.verification_method }}</div>
       </div>
       <form method="post" action="/auth/admin/services/{{ service.id }}/toggle">
         <input type="hidden" name="is_active" value="{{ 'false' if service.is_active else 'true' }}" />

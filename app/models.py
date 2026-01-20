@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, String, Boolean, DateTime, func, ForeignKey
+from sqlalchemy import Column, String, Boolean, DateTime, func, ForeignKey, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from .base import Base
@@ -33,6 +33,11 @@ class User(Base):
     )
     auth_events = relationship(
         "AuthEvent",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    oauth_accounts = relationship(
+        "OAuthAccount",
         back_populates="user",
         cascade="all, delete-orphan",
     )
@@ -91,12 +96,27 @@ class AuthEvent(Base):
     service = relationship("Service", back_populates="auth_events")
 
 
+class OAuthAccount(Base):
+    __tablename__ = "oauth_accounts"
+    __table_args__ = (UniqueConstraint("provider", "subject", name="uq_oauth_accounts_provider_subject"),)
+
+    id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    provider = Column(String, nullable=False)
+    subject = Column(String, nullable=False)
+    email = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User", back_populates="oauth_accounts")
+
+
 class Service(Base):
     __tablename__ = "services"
 
     id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
     name = Column(String, unique=True, nullable=False)
     domain = Column(String, nullable=True)
+    verification_method = Column(String, nullable=False, default="link", server_default="link")
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

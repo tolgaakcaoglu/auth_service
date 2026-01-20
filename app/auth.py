@@ -42,6 +42,10 @@ def generate_token(length: int = 32) -> str:
     return secrets.token_urlsafe(length)
 
 
+def generate_verification_code() -> str:
+    return f"{secrets.randbelow(1_000_000):06d}"
+
+
 def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 

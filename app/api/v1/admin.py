@@ -168,12 +168,19 @@ def admin_create_service(
     request: Request,
     name: str = Form(...),
     domain: str | None = Form(None),
+    verification_method: str = Form("link"),
     db_session: Session = Depends(db.get_db),
 ):
     existing = crud.get_service_by_name(db_session, name)
     if existing:
         raise HTTPException(status_code=400, detail="Service name already exists")
-    service = crud.create_service(db_session, name=name, domain=domain)
+    verification_method = _normalize_verification_method(verification_method)
+    service = crud.create_service(
+        db_session,
+        name=name,
+        domain=domain,
+        verification_method=verification_method,
+    )
     api_key, db_key = crud.create_service_api_key(db_session, service.id)
     return templates.TemplateResponse(
         "service_key_created.html",
@@ -242,3 +249,10 @@ def admin_events(request: Request, db_session: Session = Depends(db.get_db)):
         "events.html",
         {"request": request, "events": events},
     )
+
+
+def _normalize_verification_method(value: str) -> str:
+    normalized = value.strip().lower()
+    if normalized not in {"link", "code"}:
+        raise HTTPException(status_code=400, detail="Invalid verification method")
+    return normalized

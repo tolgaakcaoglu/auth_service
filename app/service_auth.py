@@ -24,6 +24,8 @@ def require_service_api_key(
         "/auth/verify-email",
         "/password/reset",
         "/auth/password/reset",
+        "/google/callback",
+        "/auth/google/callback",
     }:
         return None
     if not x_api_key:
