@@ -1,0 +1,54 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      POSTGRES_DB: auth_db_prod
+    volumes:
+      - auth_service_prod_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d auth_db_prod"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  auth:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:?}@db:5432/auth_db_prod
+      SECRET_KEY: ${SECRET_KEY:?}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-30}
+      EMAIL_VERIFY_EXPIRE_MINUTES: ${EMAIL_VERIFY_EXPIRE_MINUTES:-5}
+      PASSWORD_RESET_EXPIRE_MINUTES: ${PASSWORD_RESET_EXPIRE_MINUTES:-30}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Auth Service}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL}
+      APP_BASE_URL: ${APP_BASE_URL}
+      REGISTER_RATE_LIMIT: ${REGISTER_RATE_LIMIT:-5/10 minute}
+      TOKEN_RATE_LIMIT: ${TOKEN_RATE_LIMIT:-10/5 minute}
+      ROOT_PATH: ${ROOT_PATH:-/auth}
+      LOG_FILE: ${LOG_FILE:-app.log}
+      ADMIN_USER: ${ADMIN_USER}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}
+      GOOGLE_SCOPES: ${GOOGLE_SCOPES:-openid email profile}
+    expose:
+      - "8050"
+    command: >
+      bash -c "python scripts/create_db.py && alembic upgrade head &&
+      uvicorn app.main:app --host 0.0.0.0 --port 8050 --root-path /auth"
+
+volumes:
+  auth_service_prod_db:
